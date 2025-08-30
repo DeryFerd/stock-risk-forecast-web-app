@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Financial Risk & Forecast</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg-primary: #f9fafb;
+      --bg-secondary: #ffffff;
+      --text-primary: #1f2937;
+      --text-secondary: #6b7280;
+      --accent-blue: #3b82f6;
+      --accent-blue-dark: #1d4ed8;
+      --accent-purple: #8b5cf6;
+      --accent-red: #ef4444;
+      --accent-green: #10b981;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --border-color: #e5e7eb;
+      --card-bg: #ffffff;
+      --navbar-bg: #ffffff;
+    }
+
+    .dark-mode {
+      --bg-primary: #111827;
+      --bg-secondary: #1f2937;
+      --text-primary: #f9fafb;
+      --text-secondary: #d1d5db;
+      --border-color: #374151;
+      --card-bg: #1f2937;
+      --navbar-bg: #1f2937;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-primary); color: var(--text-primary); line-height: 1.6; transition: background-color 0.3s, color 0.3s; }
+    header { background-color: var(--navbar-bg); box-shadow: var(--shadow); position: sticky; top: 0; z-index: 100; }
+    .container { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+    .navbar { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 0; }
+    .logo { display: flex; align-items: center; gap: 10px; font-size: 1.5rem; font-weight: bold; color: var(--accent-blue); }
+    .nav-links { display: flex; gap: 2rem; }
+    .nav-links a { color: var(--text-secondary); text-decoration: none; font-weight: 500; transition: color 0.2s; cursor: pointer; }
+    .nav-links a.active, .nav-links a:hover { color: var(--accent-blue); }
+    .dark-mode-toggle { background: none; border: none; cursor: pointer; padding: 8px; border-radius: 50%; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; background-color: var(--bg-secondary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .page { min-height: calc(100vh - 180px); padding: 2rem 0; display: none; }
+    .page.active { display: block; }
+    .hero { text-align: center; padding: 4rem 0; }
+    .hero h1 { font-size: 2.5rem; margin-bottom: 1rem; background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero p { font-size: 1.2rem; color: var(--text-secondary); max-width: 700px; margin: 0 auto 2rem; }
+    .btn { display: inline-block; background: linear-gradient(90deg, var(--accent-blue), var(--accent-blue-dark)); color: white; padding: 12px 32px; border-radius: 9999px; font-weight: 600; text-decoration: none; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3); transition: all 0.3s ease; border: none; cursor: pointer; }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(59, 130, 246, 0.4); }
+    .card { background-color: var(--card-bg); border-radius: 12px; box-shadow: var(--shadow); padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid var(--border-color); }
+    .form-group { margin-bottom: 1.5rem; }
+    .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary); }
+    .form-control { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; background-color: var(--bg-secondary); color: var(--text-primary); transition: border-color 0.3s; }
+    .form-control:focus { outline: none; border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+    .result-card { text-align: center; padding: 1.5rem; border-radius: 12px; background: var(--card-bg); border: 1px solid var(--border-color); }
+    .result-value { font-size: 2rem; font-weight: bold; margin: 0.5rem 0; }
+    .result-label { color: var(--text-secondary); font-size: 1.1rem; }
+    .return-value { color: var(--accent-green); }
+    .volatility-value { color: var(--accent-red); }
+    .sharpe-value { color: var(--accent-blue); }
+    .chart-container { height: 350px; position: relative; }
+    .footer { background-color: var(--navbar-bg); padding: 2rem 0; margin-top: 4rem; }
+    .footer p { text-align: center; color: var(--text-secondary); font-size: 0.9rem; }
+    .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 50vh; gap: 1rem; }
+    .spinner { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid var(--accent-blue); border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .disclaimer { background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 1rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+    .disclaimer p { color: #92400e; font-size: 0.95rem; font-weight: 500; }
+    .dark-mode .disclaimer { background-color: #373022; border-color: #f59e0b; }
+    .dark-mode .disclaimer p { color: #fef3c7; }
+    .back-link { display: inline-block; margin-top: 1rem; color: var(--accent-blue); text-decoration: none; font-weight: 500; cursor: pointer; }
+    .back-link:hover { text-decoration: underline; }
+    .hidden { display: none !important; }
+    .btn-secondary { background-color: #e5e7eb; color: #4b5563; padding: 8px 16px; border: none; border-radius: 8px; font-weight: 500; cursor: pointer; }
+    .btn-secondary:hover { background-color: #d1d5db; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <nav class="navbar">
+        <div class="logo">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+          RiskForecaster
+        </div>
+        <div class="nav-links">
+          <a class="nav-link active" data-page="home">Beranda</a>
+          <a class="nav-link" data-page="input">Input Data</a>
+          <a class="nav-link" data-page="about">Tentang</a>
+        </div>
+        <button class="dark-mode-toggle" id="darkModeToggle">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sun-icon">
+            <circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="moon-icon hidden">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="home" class="page active">
+      <div class="hero">
+        <h1>Portfolio Risk & Forecast</h1>
+        <p>Analisis risiko portofolio dan dapatkan prediksi harga menggunakan Machine Learning.</p>
+        <button class="btn" id="startBtn">Mulai Analisis</button>
+      </div>
+    </section>
+
+    <section id="input" class="page">
+      <div class="card">
+        <h2 style="font-size: 1.8rem; margin-bottom: 1.5rem; color: var(--text-primary);">Input Data Portofolio</h2>
+        
+        <div class="form-group">
+          <label for="tickers">Ticker Saham (pisahkan dengan koma)</label>
+          <input type="text" id="tickers" class="form-control" placeholder="Contoh: BBCA.JK,AAPL,TSLA" value="BBCA.JK">
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="start_date">Tanggal Mulai</label>
+            <input type="date" id="start_date" class="form-control" value="2022-01-01">
+          </div>
+          <div class="form-group">
+            <label for="end_date">Tanggal Selesai</label>
+            <input type="date" id="end_date" class="form-control">
+          </div>
+        </div>
+        <div id="error-message" class="hidden" style="color: var(--accent-red); text-align: center; margin-bottom: 1rem;"></div>
+        <button class="btn" id="calculateBtn">Hitung Risiko & Prediksi</button>
+      </div>
+      <a class="back-link" id="backHome">← Kembali ke Beranda</a>
+    </section>
+
+    <section id="results" class="page">
+      <div class="card" id="resultsContent">
+        <h2 style="font-size: 1.8rem; margin-bottom: 1.5rem; color: var(--text-primary); text-align: center;">Hasil Analisis Portofolio</h2>
+        <p id="portfolioInfo" style="text-align: center; color: var(--text-secondary); margin-bottom: 2rem;"></p>
+        
+        <div class="results-grid">
+          <div class="result-card">
+            <div class="result-label">Expected Annual Return</div>
+            <div class="result-value return-value" id="returnValue">0%</div>
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">Prediksi imbal hasil tahunan</div>
+          </div>
+          
+          <div class="result-card">
+            <div class="result-label">Annual Volatility (Risk)</div>
+            <div class="result-value volatility-value" id="volatilityValue">0%</div>
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">Tingkat risiko fluktuasi harga</div>
+          </div>
+          
+          <div class="result-card">
+            <div class="result-label">Sharpe Ratio</div>
+            <div class="result-value sharpe-value" id="sharpeValue">0.00</div>
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">Imbal hasil per unit risiko</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-bottom: 1rem; color: var(--text-primary);" id="forecastTitle">Prediksi Harga Saham</h3>
+          <div class="chart-container">
+            <canvas id="forecastChart"></canvas>
+          </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 2rem;">
+          <button class="btn btn-secondary" id="analyzeAgain">Analisis Portofolio Lain</button>
+        </div>
+      </div>
+
+      <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+        <p style="color: var(--text-secondary); font-size: 1.1rem;">Menghitung risiko & prediksi...</p>
+        <p style="color: var(--text-secondary);">Ini bisa memakan beberapa saat, harap tunggu.</p>
+      </div>
+    </section>
+
+    <section id="about" class="page">
+        </section>
+  </main>
+
+  <footer class="footer">
+      </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- REVISI 3: Deklarasi elemen & logika dipindahkan ke dalam 'DOMContentLoaded' ---
+    const API_BASE_URL = 'https://psychic-goldfish-jvvvxjrwgp9hg56-8000.app.github.dev';
+    // DOM Elements
+    const pages = document.querySelectorAll('.page');
+    const navLinks = document.querySelectorAll('.nav-link');
+    const startBtn = document.getElementById('startBtn');
+    const backHome = document.getElementById('backHome');
+    const calculateBtn = document.getElementById('calculateBtn');
+    const analyzeAgain = document.getElementById('analyzeAgain');
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const sunIcon = document.querySelector('.sun-icon');
+    const moonIcon = document.querySelector('.moon-icon');
+    const resultsContent = document.getElementById('resultsContent');
+    const loading = document.getElementById('loading');
+    const errorMessage = document.getElementById('error-message');
+    
+    // Form Input Elements
+    const tickersInput = document.getElementById('tickers');
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+
+    // Result elements
+    const portfolioInfo = document.getElementById('portfolioInfo');
+    const returnValueEl = document.getElementById('returnValue');
+    const volatilityValueEl = document.getElementById('volatilityValue');
+    const sharpeValueEl = document.getElementById('sharpeValue');
+    const forecastTitleEl = document.getElementById('forecastTitle');
+
+    // Charts
+    let forecastChartInstance = null;
+    
+    // GANTI DENGAN KODE INI
+// Atur tanggal selesai secara manual ke tanggal valid di masa lalu untuk development
+endDateInput.value = '2025-08-29';
+console.log("Tanggal selesai diatur secara manual ke 2024-08-30 untuk menghindari data masa depan.");
+
+    // Dark Mode Toggle
+    darkModeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      sunIcon.classList.toggle('hidden');
+      moonIcon.classList.toggle('hidden');
+      localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+      // Re-render chart with correct colors if it exists
+      if (forecastChartInstance) {
+        forecastChartInstance.destroy();
+        // NOTE: Ideally, re-render chart with new colors. For simplicity, we just destroy it.
+        // A better implementation would be to store chart data and call a render function.
+      }
+    });
+
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.body.classList.add('dark-mode');
+      sunIcon.classList.add('hidden');
+      moonIcon.classList.remove('hidden');
+    }
+
+    // Navigation
+    function navigateTo(pageId) {
+      pages.forEach(page => page.classList.remove('active'));
+      navLinks.forEach(link => link.classList.remove('active'));
+      document.getElementById(pageId).classList.add('active');
+      const activeLink = document.querySelector(`.nav-link[data-page="${pageId}"]`);
+      if (activeLink) activeLink.classList.add('active');
+    }
+
+    navLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const pageId = link.getAttribute('data-page');
+        navigateTo(pageId);
+      });
+    });
+
+    startBtn.addEventListener('click', () => navigateTo('input'));
+    backHome.addEventListener('click', (e) => { e.preventDefault(); navigateTo('home'); });
+    analyzeAgain.addEventListener('click', () => navigateTo('input'));
+
+    // --- REVISI 4: Ganti logika kalkulasi dengan panggilan API ---
+    // GANTI SELURUH FUNGSI calculateBtn.addEventListener DENGAN VERSI FINAL INI
+calculateBtn.addEventListener('click', async () => {
+    const tickers = tickersInput.value.trim();
+    if (!tickers) {
+        alert('Silakan masukkan minimal satu ticker saham.');
+        return;
+    }
+    
+    const tickersArray = tickers.split(',').map(t => t.trim());
+    const requestBody = {
+        tickers: tickersArray,
+        start_date: startDateInput.value,
+        end_date: endDateInput.value
+    };
+    
+    resultsContent.classList.add('hidden');
+    loading.classList.remove('hidden');
+    errorMessage.classList.add('hidden');
+    navigateTo('results');
+
+    console.log("Memulai proses... Menghitung Risiko...");
+
+    try {
+        // Langkah 1: Ambil data risiko terlebih dahulu
+        const riskData = await fetchRiskData(requestBody);
+        console.log("✅ Selesai menghitung risiko.");
+
+        // Jika riskData berisi error, hentikan proses
+        if (riskData.error) {
+            throw new Error(riskData.error);
+        }
+
+        // Langkah 2: Baru setelah risiko berhasil, ambil data prediksi
+        console.log("Sekarang mengambil data prediksi...");
+        const forecastData = await fetchForecastData({ ...requestBody, ticker: tickersArray[0] });
+        console.log("✅ Selesai mengambil data prediksi.");
+
+        // Jika forecastData berisi error, kita tetap bisa menampilkan risk, tapi beri peringatan
+        if (forecastData.error) {
+             // Tampilkan metrik risiko yang berhasil
+            updateRiskMetrics(riskData, tickers);
+             // Tampilkan pesan error di area chart
+            updateForecastChart({ error: forecastData.error }, tickersArray[0]);
+        } else {
+            // Jika semua berhasil, tampilkan semuanya
+            updateRiskMetrics(riskData, tickers);
+            updateForecastChart(forecastData, tickersArray[0]);
+        }
+
+        resultsContent.classList.remove('hidden');
+
+    } catch (error) {
+        console.error('API Error:', error);
+        errorMessage.textContent = `Error: ${error.message}`;
+        errorMessage.classList.remove('hidden');
+        navigateTo('input');
+    } finally {
+        console.log("Proses selesai, menyembunyikan loading spinner.");
+        loading.classList.add('hidden');
+    }
+});
+    
+    // --- REVISI 5: Buat fungsi-fungsi baru untuk fetch API dan update UI ---
+    
+    async function fetchRiskData(body) {
+        const response = await fetch(`${API_BASE_URL}/calculate-risk`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || `Gagal mengambil data risiko.`);
+        }
+        return response.json();
+    }
+
+    async function fetchForecastData(body) {
+        const forecastBody = {
+            ticker: body.ticker,
+            start_date: body.start_date,
+            end_date: body.end_date,
+            forecast_horizon: 30
+        };
+        const response = await fetch(`${API_BASE_URL}/get-forecast`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(forecastBody)
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || `Gagal mengambil prediksi untuk ${body.ticker}.`);
+        }
+        return response.json();
+    }
+    
+    function formatPercent(value) {
+        return `${(value * 100).toFixed(2)}%`;
+    }
+
+    function updateRiskMetrics(data, tickers) {
+        portfolioInfo.textContent = `Portofolio: ${tickers.toUpperCase()}`;
+        returnValueEl.textContent = formatPercent(data.expected_annual_return);
+        volatilityValueEl.textContent = formatPercent(data.annual_volatility);
+        sharpeValueEl.textContent = data.sharpe_ratio.toFixed(2);
+    }
+
+        function updateForecastChart(data, ticker) {
+    if (forecastChartInstance) {
+        forecastChartInstance.destroy();
+    }
+
+    // Cek jika data yang diterima adalah objek error dari backend
+    if (data.error) {
+        console.error("Gagal mendapatkan data prediksi:", data.error);
+        forecastTitleEl.textContent = `Gagal memuat data prediksi untuk ${ticker.toUpperCase()}`;
+        // Anda bisa menambahkan pesan di dalam canvas di sini jika mau
+        return;
+    }
+
+
+        let chartData; // Variabel untuk menampung data yang formatnya sudah benar
+
+        // Cek #1: Apakah data sudah dalam format Array yang benar?
+        if (Array.isArray(data)) {
+            console.log("Format data sudah benar (Array).");
+            chartData = data;
+        } 
+        // Cek #2: Jika bukan Array, apakah ini format Object yang kita duga?
+        else if (data && data.ds && data.yhat) {
+            console.warn("Data bukan Array, mencoba mengubah format dari Object...");
+            // Ubah format dari {ds: [...], yhat: [...]} menjadi [{ds: ..., yhat: ...}, ...]
+            chartData = data.ds.map((date, index) => ({
+                ds: date,
+                yhat: data.yhat[index],
+                yhat_lower: data.yhat_lower[index],
+                yhat_upper: data.yhat_upper[index],
+            }));
+        } else {
+            // Jika format tidak dikenali, tampilkan error dan hentikan fungsi
+            console.error("Format data prediksi tidak dikenali atau data kosong.");
+            forecastTitleEl.textContent = `Gagal memuat data prediksi untuk ${ticker.toUpperCase()}`;
+            if (forecastChartInstance) forecastChartInstance.destroy(); // Hapus chart lama jika ada
+            return; 
+        }
+
+        if (forecastChartInstance) {
+            forecastChartInstance.destroy();
+        }
+        
+        // Sekarang, kita gunakan chartData yang formatnya sudah pasti benar (Array)
+        const labels = chartData.map(d => d.ds);
+        const predictions = chartData.map(d => d.yhat);
+        const lowerBounds = chartData.map(d => d.yhat_lower);
+        const upperBounds = chartData.map(d => d.yhat_upper);
+
+        forecastTitleEl.textContent = `Prediksi Harga 30 Hari ke Depan untuk ${ticker.toUpperCase()}`;
+
+        
+        const ctx = document.getElementById('forecastChart').getContext('2d');
+        forecastChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                {
+                    label: 'Prediksi Harga',
+                    data: predictions,
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.1,
+                    fill: false,
+                    pointRadius: 0
+                },
+                {
+                    label: 'Batas Atas',
+                    data: upperBounds,
+                    borderColor: 'rgba(156, 163, 175, 0.5)',
+                    borderWidth: 1,
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0
+                },
+                {
+                    label: 'Batas Bawah',
+                    data: lowerBounds,
+                    borderColor: 'rgba(156, 163, 175, 0.5)',
+                    backgroundColor: 'rgba(156, 163, 175, 0.05)',
+                    borderWidth: 1,
+                    borderDash: [5, 5],
+                    fill: '-1', // Fill to the dataset above (upperBounds)
+                    pointRadius: 0
+                }
+            ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { ticks: { color: document.body.classList.contains('dark-mode') ? '#d1d5db' : '#6b7280' } },
+                    x: { 
+                        ticks: { 
+                            color: document.body.classList.contains('dark-mode') ? '#d1d5db' : '#6b7280',
+                            maxRotation: 0,
+                            autoSkip: true,
+                            maxTicksLimit: 6
+                        } 
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+</body>
+</html>
