@@ -22,7 +22,7 @@ origins = [
     "http://localhost:8080",
     "http://127.0.0.1:8080",
     # PASTE URL FORWARDED DARI FRONTEND ANDA DI SINI
-    "https://psychic-goldfish-jvvvxjrwgp9hg56-8080.app.github.dev", 
+    "https://stock-risk-forecast.netlify.app", 
 ]
 
 app.add_middleware(
